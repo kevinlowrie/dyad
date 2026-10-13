@@ -1,0 +1,16 @@
+#!/bin/sh
+set -eu
+
+url=
+for argument in "$@"; do
+  url=$argument
+done
+
+case "$url" in
+  http://*|https://*) ;;
+  *) printf 'Only HTTP(S) URLs can be opened by the host browser bridge.\n' >&2; exit 1 ;;
+esac
+
+exec curl --fail --silent --show-error --connect-timeout 2 --max-time 5 \
+  --unix-socket /run/dyad-open-uri.sock \
+  -H 'Content-Type: text/plain' --data-binary "$url" http://localhost/
