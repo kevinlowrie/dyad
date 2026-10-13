@@ -5,9 +5,9 @@ import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 
 export function readEnvValue(contents, name) {
-  const line = contents.split(/\r?\n/).find((value) =>
-    value.startsWith(`${name}=`),
-  );
+  const line = contents
+    .split(/\r?\n/)
+    .find((value) => value.startsWith(`${name}=`));
   let value = line?.slice(name.length + 1).trim();
   if (value && /^(["']).*\1$/.test(value)) value = value.slice(1, -1);
   if (!value) throw new Error(`Credential file is missing ${name}`);
@@ -34,7 +34,13 @@ export function createApi(base, key, fetchImpl = fetch) {
   };
 }
 
-export async function ensureProject({ api, companyId, name, repoUrl, description }) {
+export async function ensureProject({
+  api,
+  companyId,
+  name,
+  repoUrl,
+  description,
+}) {
   const projects = await api(`/companies/${companyId}/projects`);
   let project = projects.find((item) => item.name === name);
   if (!project) {
@@ -42,7 +48,8 @@ export async function ensureProject({ api, companyId, name, repoUrl, description
     const lead = agents.find(
       (agent) => agent.metadata?.developer_worker === "opencode",
     );
-    if (!lead) throw new Error("The company has no OpenCode Developer Team agent");
+    if (!lead)
+      throw new Error("The company has no OpenCode Developer Team agent");
     project = await api(`/companies/${companyId}/projects`, {
       name,
       description,
@@ -72,7 +79,8 @@ async function main() {
     return;
   }
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-  const privateDir = process.env.PAPERCLIP_CREDENTIAL_DIR ??
+  const privateDir =
+    process.env.PAPERCLIP_CREDENTIAL_DIR ??
     path.join(os.homedir(), ".config/homelab/agent-workers");
   const stateFile = path.join(root, "userData/paperclip-project.json");
   if (action === "sync") {
@@ -80,10 +88,14 @@ async function main() {
       await fs.readFile(path.join(privateDir, "paperclip.env"), "utf8"),
       "PAPERCLIP_API_KEY",
     );
-    const api = createApi(process.env.PAPERCLIP_API_URL ?? "http://127.0.0.1:3100/api", key);
+    const api = createApi(
+      process.env.PAPERCLIP_API_URL ?? "http://127.0.0.1:3100/api",
+      key,
+    );
     const identity = await api("/agents/me");
     const companyId = process.env.PAPERCLIP_COMPANY_ID ?? identity.companyId;
-    if (!companyId) throw new Error("Set PAPERCLIP_COMPANY_ID for this credential");
+    if (!companyId)
+      throw new Error("Set PAPERCLIP_COMPANY_ID for this credential");
     const state = await ensureProject({
       api,
       companyId,
@@ -109,15 +121,22 @@ async function main() {
     await fs.readFile(path.join(privateDir, "team.env"), "utf8"),
     "WORKER_API_KEY",
   );
-  const api = createApi(process.env.PAPERCLIP_TEAM_URL ?? "http://127.0.0.1:8110", key);
+  const api = createApi(
+    process.env.PAPERCLIP_TEAM_URL ?? "http://127.0.0.1:8110",
+    key,
+  );
   if (action === "status") {
     const jobId = process.argv[3];
-    if (!/^[0-9a-f-]{36}$/i.test(jobId ?? "")) throw new Error("A job UUID is required");
+    if (!/^[0-9a-f-]{36}$/i.test(jobId ?? ""))
+      throw new Error("A job UUID is required");
     console.log(JSON.stringify(await api(`/v1/jobs/${jobId}`), null, 2));
     return;
   }
   const [, , , scope, promptFile, requestId] = process.argv;
-  if (!["research", "plan", "small-code", "complex-code", "qa"].includes(scope) || !promptFile) {
+  if (
+    !["research", "plan", "small-code", "complex-code", "qa"].includes(scope) ||
+    !promptFile
+  ) {
     throw new Error("Supply a supported scope and a prompt file");
   }
   const state = JSON.parse(await fs.readFile(stateFile, "utf8"));
@@ -139,7 +158,10 @@ async function main() {
   console.log(JSON.stringify(await api("/v1/jobs", body), null, 2));
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (
+  process.argv[1] &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+) {
   main().catch((error) => {
     console.error(error.message);
     process.exitCode = 1;

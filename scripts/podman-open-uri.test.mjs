@@ -76,13 +76,29 @@ test("Dyad bridge opens only bounded add-prompt deep links", async () => {
 
   try {
     const payload = Buffer.from(
-      JSON.stringify({ title: "Customer prototype", description: "Brief", content: "Create a wireframe" }),
+      JSON.stringify({
+        title: "Customer prototype",
+        description: "Brief",
+        content: "Create a wireframe",
+      }),
     ).toString("base64");
     const uri = `dyad://add-prompt?data=${encodeURIComponent(payload)}`;
     assert.equal(await post("/dyad", uri), 202);
-    assert.equal(await post("/dyad", "dyad://add-mcp-server?data=eyJ4IjoieSJ9"), 400);
-    assert.equal(await post("/dyad", "dyad://add-prompt?data=eyJ0aXRsZSI6Im9rIn0="), 400);
-    assert.equal(await post("/dyad", "dyad://add-prompt?data=eyJ0aXRsZSI6Im9rIiwiY29udGVudCI6IngifQ==&extra=x"), 400);
+    assert.equal(
+      await post("/dyad", "dyad://add-mcp-server?data=eyJ4IjoieSJ9"),
+      400,
+    );
+    assert.equal(
+      await post("/dyad", "dyad://add-prompt?data=eyJ0aXRsZSI6Im9rIn0="),
+      400,
+    );
+    assert.equal(
+      await post(
+        "/dyad",
+        "dyad://add-prompt?data=eyJ0aXRsZSI6Im9rIiwiY29udGVudCI6IngifQ==&extra=x",
+      ),
+      400,
+    );
     assert.deepEqual(opened, [uri]);
   } finally {
     await new Promise((resolve) => server.close(resolve));

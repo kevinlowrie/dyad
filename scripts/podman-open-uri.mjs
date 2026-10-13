@@ -5,7 +5,10 @@ import { spawn } from "node:child_process";
 
 export function createOpenUriServer(openUrl) {
   return http.createServer((request, response) => {
-    if (request.method !== "POST" || !new Set(["/", "/dyad"]).has(request.url)) {
+    if (
+      request.method !== "POST" ||
+      !new Set(["/", "/dyad"]).has(request.url)
+    ) {
       response.writeHead(404).end();
       return;
     }
@@ -28,7 +31,11 @@ export function createOpenUriServer(openUrl) {
       if (dyadPrompt ? !isDyadPromptUrl(url) : !isBrowserUrl(url)) {
         response
           .writeHead(400)
-          .end(dyadPrompt ? "Only validated Dyad add-prompt links are allowed" : "Only credential-free HTTP(S) URLs are allowed");
+          .end(
+            dyadPrompt
+              ? "Only validated Dyad add-prompt links are allowed"
+              : "Only credential-free HTTP(S) URLs are allowed",
+          );
         return;
       }
 
@@ -37,7 +44,9 @@ export function createOpenUriServer(openUrl) {
           response.writeHead(502).end("Host browser could not be opened");
           return;
         }
-        response.writeHead(202).end(dyadPrompt ? "Opened in Dyad" : "Opened in host browser");
+        response
+          .writeHead(202)
+          .end(dyadPrompt ? "Opened in Dyad" : "Opened in host browser");
       });
     });
   });
@@ -65,20 +74,28 @@ function isDyadPromptUrl(url) {
     return false;
   }
   const encoded = url.searchParams.get("data") ?? "";
-  if (!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(encoded)) {
+  if (
+    !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(
+      encoded,
+    )
+  ) {
     return false;
   }
   try {
     const decoded = Buffer.from(encoded, "base64").toString("utf8");
-    if (Buffer.from(decoded, "utf8").toString("base64") !== encoded) return false;
+    if (Buffer.from(decoded, "utf8").toString("base64") !== encoded)
+      return false;
     const payload = JSON.parse(decoded);
     return (
       payload &&
       typeof payload === "object" &&
       !Array.isArray(payload) &&
-      Object.keys(payload).every((key) => ["title", "description", "content"].includes(key)) &&
+      Object.keys(payload).every((key) =>
+        ["title", "description", "content"].includes(key),
+      ) &&
       ["title", "description", "content"].every(
-        (key) => typeof payload[key] === "string" && payload[key].length <= 6000,
+        (key) =>
+          typeof payload[key] === "string" && payload[key].length <= 6000,
       ) &&
       payload.title.length > 0 &&
       payload.content.length > 0 &&
@@ -111,6 +128,8 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   });
 
   for (const signal of ["SIGINT", "SIGTERM"]) {
-    process.on(signal, () => server.close(() => fs.rmSync(socketPath, { force: true })));
+    process.on(signal, () =>
+      server.close(() => fs.rmSync(socketPath, { force: true })),
+    );
   }
 }
